@@ -292,3 +292,4 @@ The database includes the following tables:
 
 This project is part of the ClipMind AI capstone project.
 # ClipMindAI
+# ClipMind
