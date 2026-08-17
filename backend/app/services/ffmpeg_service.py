@@ -10,6 +10,7 @@ Works on:
 import json
 import os
 import shutil
+import imageio_ffmpeg
 import subprocess
 from pathlib import Path
 
@@ -38,8 +39,9 @@ def find_ffmpeg() -> str:
 
     Priority:
     1. FFMPEG_PATH environment variable
-    2. System PATH (used by Render/Linux)
-    3. Local Windows binary in backend/ffmpeg/bin/
+    2. System PATH
+    3. imageio-ffmpeg bundled executable
+    4. Local Windows binary
     """
 
     # 1. Environment variable
@@ -54,18 +56,26 @@ def find_ffmpeg() -> str:
     if system_ffmpeg:
         return system_ffmpeg
 
-    # 3. Windows local binary
+    # 3. imageio-ffmpeg
+    try:
+        bundled_ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
+
+        if bundled_ffmpeg and Path(bundled_ffmpeg).exists():
+            return bundled_ffmpeg
+
+    except Exception:
+        pass
+
+    # 4. Windows local binary
     local_ffmpeg = BASE_DIR / "ffmpeg" / "bin" / "ffmpeg.exe"
 
     if local_ffmpeg.exists():
         return str(local_ffmpeg)
 
     raise FileNotFoundError(
-        "FFmpeg not found. "
-        "On Render/Linux, FFmpeg must be available in PATH. "
-        "On Windows, place ffmpeg.exe in backend/ffmpeg/bin/."
+        "FFmpeg not found. Install FFmpeg or add imageio-ffmpeg "
+        "to the Python dependencies."
     )
-
 
 def find_ffprobe() -> str:
     """
@@ -73,8 +83,9 @@ def find_ffprobe() -> str:
 
     Priority:
     1. FFPROBE_PATH environment variable
-    2. System PATH (used by Render/Linux)
-    3. Local Windows binary in backend/ffmpeg/bin/
+    2. System PATH
+    3. imageio-ffmpeg executable
+    4. Local Windows binary
     """
 
     # 1. Environment variable
@@ -89,16 +100,24 @@ def find_ffprobe() -> str:
     if system_ffprobe:
         return system_ffprobe
 
-    # 3. Windows local binary
+    # 3. imageio-ffmpeg
+    try:
+        bundled_ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
+
+        if bundled_ffmpeg and Path(bundled_ffmpeg).exists():
+            return bundled_ffmpeg
+
+    except Exception:
+        pass
+
+    # 4. Windows local binary
     local_ffprobe = BASE_DIR / "ffmpeg" / "bin" / "ffprobe.exe"
 
     if local_ffprobe.exists():
         return str(local_ffprobe)
 
     raise FileNotFoundError(
-        "FFprobe not found. "
-        "On Render/Linux, FFprobe must be available in PATH. "
-        "On Windows, place ffprobe.exe in backend/ffmpeg/bin/."
+        "FFprobe not found. Install FFmpeg or add a valid FFPROBE_PATH."
     )
 
 
