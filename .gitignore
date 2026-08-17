@@ -1,0 +1,39 @@
+# === Dependencies / environments ===
+node_modules/
+backend/venv/
+.venv/
+venv/
+
+# === Tool binaries / downloads ===
+ffmpeg-8.1.2-essentials_build/
+backend/ffmpeg/
+
+# === Build output ===
+frontend/dist/
+dist/
+
+# === Secrets & local config ===
+.env
+.env.*
+backend/.env
+frontend/.env
+
+# === Python caches ===
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# === Databases / generated data ===
+backend/clipmind_ai.db
+*.sqlite3
+backend/thumbnails/
+
+# === Editor / OS ===
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# === Windows reserved device names that git cannot index ===
+NUL
+
