@@ -9,7 +9,7 @@ pydantic==2.13.4
 pydantic-settings==2.3.3
 python-dotenv==1.0.0
 email-validator==2.1.1
-openai-whisper==20240930
+openai-whisper==20250625
 transformers==4.45.2
 torch==2.4.1
 accelerate==0.34.2
