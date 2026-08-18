@@ -130,16 +130,35 @@ def create_application() -> FastAPI:
         openapi_url="/openapi.json",
     )
 
-    # CORS Middleware
+                    # CORS Middleware
+    # ALWAYS register the middleware so the browser receives proper
+    # Access-Control-* headers even when BACKEND_CORS_ORIGINS is unset or
+    # empty (which previously caused silent CORS failures in production
+    # because the middleware was simply skipped).
     cors_origins = settings.cors_origins_list
-    if cors_origins:
-        app.add_middleware(
-            CORSMiddleware,
-            allow_origins=[str(origin) for origin in cors_origins],
-            allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"],
+    # Fall back to a sensible default when the env var is missing/empty so
+    # that the Vercel frontend and local dev servers are never locked out.
+    if not cors_origins:
+        cors_origins = [
+            "https://clip-mind-frontend.vercel.app",
+            "http://localhost:3000",
+            "http://localhost:8000",
+            "http://localhost:80",
+        ]
+        logger.warning(
+            "BACKEND_CORS_ORIGINS was empty/unset — falling back to default "
+            "origins: %s", cors_origins
         )
+    else:
+        logger.info("CORS allowed origins: %s", cors_origins)
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[str(origin) for origin in cors_origins],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     # Serve uploaded files statically
     upload_dir = settings.UPLOAD_DIR
