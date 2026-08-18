@@ -16,12 +16,9 @@ load_dotenv()
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 if not GOOGLE_API_KEY:
-    raise RuntimeError(
-        "GOOGLE_API_KEY not found. Please set it in your .env file."
+    logger.warning(
+        "GOOGLE_API_KEY not configured. Quiz generation will be disabled."
     )
-
-# Initialize the new google-genai client
-client = genai.Client(api_key=GOOGLE_API_KEY)
 
 
 class QuizService:
@@ -32,7 +29,15 @@ class QuizService:
 
     def __init__(self):
         self.model_name = "gemini-2.5-flash"
-        self.client = client if GOOGLE_API_KEY else None
+
+        # Do NOT create the Gemini client at module import time — that would
+        # crash application startup when GOOGLE_API_KEY is missing.  Instead,
+        # create it here (harmless: no network call) only when a key exists.
+        self.client = (
+            genai.Client(api_key=GOOGLE_API_KEY)
+            if GOOGLE_API_KEY
+            else None
+        )
 
     # -----------------------------------------------------
 
@@ -55,7 +60,7 @@ class QuizService:
         """
         if not self.client:
             raise RuntimeError(
-                "Gemini API key not configured. Set GOOGLE_API_KEY environment variable."
+                "Quiz generation is disabled because GOOGLE_API_KEY is not configured."
             )
 
         if not transcript or not transcript.strip():
