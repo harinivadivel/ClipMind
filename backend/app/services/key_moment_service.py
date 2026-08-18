@@ -30,13 +30,64 @@ class KeyMomentService:
         model_name: str = "all-MiniLM-L6-v2",
         min_confidence: float = 0.35,
     ):
-        logger.info(f"Loading KeyBERT model: {model_name}")
+        """
+        Initialize without loading AI models.
 
-        self.model = KeyBERT(model_name)
+        KeyBERT and BART are loaded lazily on first use so that
+        constructing the service is cheap (Render Free memory limits).
+        """
+
+        self.model_name = model_name
         self.min_confidence = min_confidence
-        self.summarizer = SummaryService()
 
-        logger.info("KeyMomentService initialized with SummaryService + KeyBERT")
+        # Lazy-loaded models
+        self.model = None
+        self.summarizer = None
+
+        logger.info(
+            "KeyMomentService initialized. "
+            "AI models will be loaded only when key moments are requested."
+        )
+
+    # ----------------------------------------------------------------
+    # Lazy model loading
+    # ----------------------------------------------------------------
+
+    def _get_keybert(self):
+        """
+        Lazily load the KeyBERT model.
+        """
+
+        if self.model is None:
+            logger.info(
+                "Loading KeyBERT model: %s",
+                self.model_name,
+            )
+
+            self.model = KeyBERT(self.model_name)
+
+            logger.info("KeyBERT model loaded successfully")
+
+        return self.model
+
+    # ----------------------------------------------------------------
+
+    def _get_summarizer(self):
+        """
+        Lazily create SummaryService.
+
+        SummaryService itself lazily loads BART, so this does not
+        load BART during application startup.
+        """
+
+        if self.summarizer is None:
+            logger.info(
+                "Initializing SummaryService for key-moment detection"
+            )
+
+            self.summarizer = SummaryService()
+
+        return self.summarizer
 
     # ----------------------------------------------------------------
     # Keyword extraction
@@ -54,7 +105,9 @@ class KeyMomentService:
             return []
 
         try:
-            keywords = self.model.extract_keywords(
+            model = self._get_keybert()
+
+            keywords = model.extract_keywords(
                 text,
                 keyphrase_ngram_range=(1, 2),
                 stop_words="english",
@@ -132,7 +185,9 @@ class KeyMomentService:
                 continue
 
             # Step 2a: Summarize the segment
-            segment_summary = self.summarizer.summarize_chunk(
+            summarizer = self._get_summarizer()
+
+            segment_summary = summarizer.summarize_chunk(
                 segment_text,
                 max_length=50,
                 min_length=10,

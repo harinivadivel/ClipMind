@@ -91,13 +91,69 @@ class ChapterGenerationService:
         self,
         model_name: str = "all-MiniLM-L6-v2",
     ):
-        logger.info(f"Loading embedding model for chapter detection: {model_name}")
-        # Re-use KeyBERT's underlying sentence-transformer model for embeddings
-        self.kw_model = KeyBERT(model_name)
-        # The underlying sentence-transformer model
-        self.embedding_model = self.kw_model.model.embedding_model
-        self.summarizer = SummaryService()
-        logger.info("ChapterGenerationService initialized")
+        """
+        Initialize chapter generation without loading AI models.
+
+        Models (KeyBERT / sentence-transformers / BART) are loaded only when
+        chapter generation is actually requested.  This is important for
+        Render Free because the service has limited RAM.
+        """
+
+        self.model_name = model_name
+
+        # Lazy-loaded models
+        self.kw_model = None
+        self.embedding_model = None
+        self.summarizer = None
+
+        logger.info(
+            "ChapterGenerationService initialized. "
+            "AI models will be loaded only when chapter generation is requested."
+        )
+
+    # ----------------------------------------------------------------
+    # Lazy model loading
+    # ----------------------------------------------------------------
+
+    def _get_embedding_model(self):
+        """
+        Lazily load the KeyBERT/SentenceTransformer embedding model.
+        """
+
+        if self.embedding_model is None:
+            logger.info(
+                "Loading embedding model for chapter detection: %s",
+                self.model_name,
+            )
+
+            self.kw_model = KeyBERT(self.model_name)
+
+            self.embedding_model = (
+                self.kw_model.model.embedding_model
+            )
+
+            logger.info("Embedding model loaded successfully")
+
+        return self.embedding_model
+
+    # ----------------------------------------------------------------
+
+    def _get_summarizer(self):
+        """
+        Lazily create SummaryService.
+
+        SummaryService itself lazily loads BART, so this does not
+        load BART during application startup.
+        """
+
+        if self.summarizer is None:
+            logger.info(
+                "Initializing SummaryService for chapter generation"
+            )
+
+            self.summarizer = SummaryService()
+
+        return self.summarizer
 
     # ----------------------------------------------------------------
     # Embedding helpers
@@ -108,7 +164,13 @@ class ChapterGenerationService:
         if not texts:
             return np.array([])
         try:
-            embeddings = self.embedding_model.encode(texts, show_progress_bar=False)
+            embedding_model = self._get_embedding_model()
+
+            embeddings = embedding_model.encode(
+                texts,
+                show_progress_bar=False,
+            )
+
             return np.array(embeddings)
         except Exception as e:
             logger.warning(f"Embedding failed, falling back: {e}")
@@ -260,7 +322,9 @@ class ChapterGenerationService:
             return f"Chapter {idx + 1}"
 
         try:
-            summary_text = self.summarizer.summarize_chunk(
+            summarizer = self._get_summarizer()
+
+            summary_text = summarizer.summarize_chunk(
                 chapter_text,
                 max_length=30,
                 min_length=8,
@@ -301,7 +365,9 @@ class ChapterGenerationService:
             return ""
 
         try:
-            desc = self.summarizer.summarize_chunk(
+            summarizer = self._get_summarizer()
+
+            desc = summarizer.summarize_chunk(
                 chapter_text,
                 max_length=50,
                 min_length=15,

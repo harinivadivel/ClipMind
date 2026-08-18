@@ -23,21 +23,53 @@ class SummaryService:
     """
 
     def __init__(self):
+        """
+        Initialize the service WITHOUT loading the BART model.
+
+        BART is loaded on first use via ``_get_summarizer()``.  Deferring the
+        load keeps the FastAPI startup memory footprint low, which matters on
+        Render Free (512 MiB limit).
+        """
 
         self.model_name = "facebook/bart-large-cnn"
 
-        logger.info(f"Loading BART model: {self.model_name}")
+        # Do NOT load the model during FastAPI startup.
+        # Render Free has limited memory.
+        self.summarizer = None
 
-        device = 0 if torch.cuda.is_available() else -1
-
-        self.summarizer = pipeline(
-            "summarization",
-            model=self.model_name,
-            tokenizer=self.model_name,
-            device=device,
+        logger.info(
+            "SummaryService initialized. "
+            "BART will be loaded only when summarization is requested."
         )
 
-        logger.info("BART model loaded successfully")
+    # -----------------------------------------------------
+
+    def _get_summarizer(self):
+        """
+        Load BART only when it is actually needed.
+
+        This prevents the large model from being loaded
+        during FastAPI application startup.
+        """
+
+        if self.summarizer is None:
+            logger.info(
+                "Loading BART model: %s",
+                self.model_name,
+            )
+
+            device = 0 if torch.cuda.is_available() else -1
+
+            self.summarizer = pipeline(
+                "summarization",
+                model=self.model_name,
+                tokenizer=self.model_name,
+                device=device,
+            )
+
+            logger.info("BART model loaded successfully")
+
+        return self.summarizer
 
     # -----------------------------------------------------
 
@@ -107,10 +139,12 @@ class SummaryService:
              max_length manually …"
         """
 
+        summarizer = self._get_summarizer()
+
         # Determine the input length in *tokens* (not words) so we can cap
         # max_length accordingly.  BART's tokenizer max input is 1024 tokens.
         input_tokens = len(
-            self.summarizer.tokenizer.encode(
+            summarizer.tokenizer.encode(
                 text, truncation=True, max_length=1024
             )
         )
@@ -146,7 +180,7 @@ class SummaryService:
             effective_max, effective_min,
         )
 
-        result = self.summarizer(
+        result = summarizer(
             text,
             max_length=effective_max,
             min_length=effective_min,

@@ -35,8 +35,42 @@ class TranscriptService:
 
     def __init__(self, whisper_model_name: str = "base"):
         self.ffmpeg = FFmpegService()
-        self.whisper = WhisperService(model_name=whisper_model_name)
+
+        # Store the model name but DO NOT load Whisper during startup.
+        # Render Free has only limited RAM.
+        self.whisper_model_name = whisper_model_name
+        self.whisper = None
+
         os.makedirs(AUDIO_DIR, exist_ok=True)
+
+        logger.info(
+            "TranscriptService initialized. "
+            "Whisper will be loaded only when transcription is requested."
+        )
+
+    # ----------------------------------------------------------------
+
+    def _get_whisper(self) -> WhisperService:
+        """
+        Lazily create WhisperService only when transcription is needed.
+
+        This prevents the Whisper model from consuming RAM during
+        FastAPI application startup.
+        """
+
+        if self.whisper is None:
+            logger.info(
+                "Loading Whisper model: %s",
+                self.whisper_model_name,
+            )
+
+            self.whisper = WhisperService(
+                model_name=self.whisper_model_name
+            )
+
+            logger.info("Whisper model loaded successfully")
+
+        return self.whisper
 
     # ----------------------------------------------------------------
     # Public API
@@ -75,7 +109,10 @@ class TranscriptService:
 
         # Step 2: Generate transcript
         logger.info(f"Transcribing audio: {audio_path}")
-        result = self.whisper.transcribe_audio(audio_path)
+
+        whisper = self._get_whisper()
+
+        result = whisper.transcribe_audio(audio_path)
 
         transcript = {
             "video_path": video_path,
@@ -123,7 +160,10 @@ class TranscriptService:
             f"Starting transcription for video {video.id}, "
             f"audio_path={video.audio_path}"
         )
-        transcription_result = self.whisper.transcribe_audio(video.audio_path)
+
+        whisper = self._get_whisper()
+
+        transcription_result = whisper.transcribe_audio(video.audio_path)
         logger.info(f"Transcription completed for video {video.id}")
 
         # Build confidence from segments
