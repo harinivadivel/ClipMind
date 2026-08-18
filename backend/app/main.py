@@ -1,6 +1,7 @@
 """
 ClipMind AI - Main FastAPI Application Entry Point.
 """
+import logging
 import os
 
 from fastapi import FastAPI
@@ -34,8 +35,22 @@ from app.routers.learning_material_share_router import (
 from app.routers.summary_share_router import router as summary_share_router, public_router as summary_share_public_router
 from app.routers.educator_router import router as educator_router
 
-# Create database tables
-Base.metadata.create_all(bind=engine)
+# Module-level logger
+logger = logging.getLogger(__name__)
+
+# Create database tables.
+# NOTE: wrapped in try/except so a DB outage at startup (e.g. a bad DATABASE_URL)
+# logs one clear, actionable error instead of crash-looping the whole service.
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as exc:
+    logger.error("Database unavailable at startup: %s", exc)
+    logger.error(
+        "If this runs on Railway: the '*.railway.internal' hostname only resolves "
+        "inside the SAME project's private network. For a database that lives in "
+        "another project (or to connect from outside Railway), use the public "
+        "'*.up.railway.app' hostname in DATABASE_URL instead."
+    )
 
 
 def initialize_database():
