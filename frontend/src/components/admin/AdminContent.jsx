@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { FiSearch, FiTrash2, FiRefreshCw, FiPlay } from 'react-icons/fi';
 import adminService from '../../services/adminService.js';
 import { friendlyDate, formatBytes } from './adminUtils.jsx';
+import { resolveMediaUrl } from '../../utils/mediaUrl.js';
 
 const AdminContent = () => {
   const [items, setItems] = useState([]);
@@ -71,7 +72,7 @@ const AdminContent = () => {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       {v.thumbnail_url ? (
-                        <img src={v.thumbnail_url} alt="" className="h-10 w-16 rounded-lg object-cover" />
+                        <img src={resolveMediaUrl(v.thumbnail_url)} alt="" className="h-10 w-16 rounded-lg object-cover" />
                       ) : (
                         <span className="flex h-10 w-16 items-center justify-center rounded-lg bg-slate-100 text-slate-400"><FiPlay /></span>
                       )}

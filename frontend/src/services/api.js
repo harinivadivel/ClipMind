@@ -1,8 +1,18 @@
 import axios from 'axios';
 
+// API origin = deployed backend (e.g. https://your-backend.onrender.com),
+// local backend (http://localhost:8000), or empty string for same-origin
+// requests (handled by the Vite dev proxy locally).
+//
+// A trailing "/api" is stripped if VITE_API_URL is set that way, because every
+// service call below already includes the /api prefix (e.g. "/api/auth/login").
+// Without this, an unset VITE_API_URL used to fall back to baseURL "/api",
+// producing broken doubled URLs like "/api/api/auth/login".
+const API_ORIGIN = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '').replace(/\/api$/, '');
+
 // Create axios instance
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: API_ORIGIN,
   timeout: 3000000, // 5 minutes - required for Whisper transcription, summary generation, etc.
 });
 

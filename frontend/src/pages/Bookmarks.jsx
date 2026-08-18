@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { FiBookmark, FiVideo, FiSearch, FiTrash2, FiClock, FiList, FiZap } from "react-icons/fi";
 import bookmarkService from "../services/bookmarkService";
+import { resolveMediaUrl } from "../utils/mediaUrl.js";
 
 export default function Bookmarks() {
 
@@ -134,7 +135,7 @@ export default function Bookmarks() {
                 <div key={item.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 flex items-center gap-3 sm:gap-4">
                   <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center shrink-0">
                     {item.video_thumbnail_url ? (
-                      <img src={item.video_thumbnail_url} alt="" className="w-full h-full object-cover rounded-lg" />
+                      <img src={resolveMediaUrl(item.video_thumbnail_url)} alt="" className="w-full h-full object-cover rounded-lg" />
                     ) : (
                       <FiZap className="text-2xl text-gray-300" />
                     )}
@@ -173,7 +174,7 @@ export default function Bookmarks() {
                 <div className="w-20 h-14 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
                   {bookmark.video.thumbnail_url ? (
                     <img
-                      src={bookmark.video.thumbnail_url}
+                      src={resolveMediaUrl(bookmark.video.thumbnail_url)}
                       alt={bookmark.video.title}
                       className="w-full h-full object-cover"
                     />

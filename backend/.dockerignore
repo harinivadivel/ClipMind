@@ -1,0 +1,39 @@
+# ============================================================
+# ClipMind AI — files excluded from the Docker build context
+# ============================================================
+
+# Python
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Secrets & local config
+.env
+.env.*
+!.env.example
+
+# Local databases
+*.db
+*.sqlite3
+
+# Large local runtime artifacts (regenerated inside the container)
+audio/
+thumbnails/
+app/uploads/
+
+# Windows-local ffmpeg binaries (Linux ffmpeg is installed via apt in the image)
+ffmpeg/
+
+# Dev-only helpers / SQL scripts not used at runtime
+tests/
+migrations/
+generate_summaries.py
+run_db_fix.py
+init.sql
+runtime.txt
+
+# Docs / misc
+*.md
+.vscode/

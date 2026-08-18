@@ -1,0 +1,80 @@
+# ============================================================================
+# ClipMind AI — Local Docker stack (FastAPI + PostgreSQL)
+#
+# Usage (from the repo root):
+#   docker compose -f backend/docker-compose.yml up --build
+#
+# Overridable vars/secrets are read from backend/.env (gitignored). The
+# backend service also injects .env into the container at RUNTIME via
+# env_file — note .env is NOT baked into the image (see .dockerignore).
+# ============================================================================
+name: clipmind
+
+services:
+  # ----------------------------------------------------------
+  # PostgreSQL database
+  # ----------------------------------------------------------
+  postgres:
+    image: postgres:17-alpine
+    container_name: clipmind-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres2004}
+      POSTGRES_DB: ${POSTGRES_DB:-clipmind_ai}
+    ports:
+      # Host port 5432 — if a local PostgreSQL already uses it, change the
+      # left side (e.g. "5433:5432"). The backend still works because it talks
+      # to `postgres` on the internal compose network, not the host.
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-clipmind_ai}
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # ----------------------------------------------------------
+  # FastAPI backend
+  # ----------------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: clipmind-backend
+    restart: unless-stopped
+    # Inject app env vars (SECRET_KEY, GOOGLE_API_KEY, ...) from the gitignored
+    # backend/.env at RUNTIME. .env is excluded from the image by .dockerignore.
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Always point the app at the `postgres` service inside Docker, regardless
+      # of any stale DATABASE_URL in .env. `environment` overrides `env_file`.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres2004}@postgres:5432/${POSTGRES_DB:-clipmind_ai}
+      # NLTK stopwords cache (downloaded on first use)
+      NLTK_DATA: /app/nltk_data
+      # CORS — allow the Vite dev server (comma-separated; JSON also accepted)
+      BACKEND_CORS_ORIGINS: "https://clip-mind-frontend.vercel.app,http://localhost:3000"
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persist uploads, extracted audio, thumbnails and the downloaded
+      # Whisper model cache across container restarts.
+      - uploads_data:/app/app/uploads
+      - audio_data:/app/audio
+      - thumbnails_data:/app/thumbnails
+      - model_cache:/root/.cache
+
+volumes:
+  postgres_data:
+  uploads_data:
+  audio_data:
+  thumbnails_data:
+  model_cache:

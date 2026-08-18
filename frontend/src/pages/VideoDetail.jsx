@@ -9,6 +9,7 @@ import videoService from '../services/videoService.js';
 import bookmarkService from '../services/bookmarkService.js';
 import reportService from '../services/reportService.js';
 import historyService from '../services/historyService.js';
+import { resolveMediaUrl } from '../utils/mediaUrl.js';
 
 const VideoDetail = () => {
   const { videoId } = useParams();
@@ -521,8 +522,8 @@ const VideoDetail = () => {
                   ref={videoRef}
                   controls
                   className="w-full h-full"
-                  src={video.video_url}
-                  poster={video.thumbnail_url}
+                  src={resolveMediaUrl(video.video_url)}
+                  poster={resolveMediaUrl(video.thumbnail_url)}
                   onTimeUpdate={handleVideoTimeUpdate}
                 >
                   Your browser does not support the video tag.
@@ -532,8 +533,8 @@ const VideoDetail = () => {
                   ref={videoRef}
                   controls
                   className="w-full h-full"
-                  src={video.file_path}
-                  poster={video.thumbnail_url}
+                  src={resolveMediaUrl(video.file_path)}
+                  poster={resolveMediaUrl(video.thumbnail_url)}
                   onTimeUpdate={handleVideoTimeUpdate}
                 >
                   Your browser does not support the video tag.

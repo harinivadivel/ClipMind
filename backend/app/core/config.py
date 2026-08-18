@@ -1,8 +1,10 @@
 """
 Core application configuration.
 """
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
+import json
 import os
 
 
@@ -44,11 +46,28 @@ class Settings(BaseSettings):
     FFMPEG_BIN: str = os.getenv("FFMPEG_BIN", "ffmpeg")
     FFPROBE_BIN: str = os.getenv("FFPROBE_BIN", "ffprobe")
 
-    # CORS
-    BACKEND_CORS_ORIGINS: list[str] = [
-        "http://localhost:5173",
-        "http://localhost:3000",
-    ]
+    # CORS — which browser origins may call the API.
+    # Stored as a plain string so comma-separated values work directly in
+    # .env / env vars ("http://a,https://b") without pydantic-settings trying
+    # to JSON-decode a list type. CORS_ORIGINS is accepted as an alias.
+    BACKEND_CORS_ORIGINS: str = Field(
+        default="https://clip-mind-frontend.vercel.app,http://localhost:3000",
+        validation_alias=AliasChoices("BACKEND_CORS_ORIGINS", "CORS_ORIGINS"),
+    )
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        """Parse BACKEND_CORS_ORIGINS into a list of origins."""
+        raw = self.BACKEND_CORS_ORIGINS.strip()
+        if not raw:
+            return []
+        # Also accept a JSON array, e.g. '["http://a","https://b"]'
+        if raw.startswith("["):
+            try:
+                return json.loads(raw)
+            except json.JSONDecodeError:
+                pass
+        return [item.strip() for item in raw.split(",") if item.strip()]
 
     # Backend URL for constructing absolute URLs
     BACKEND_URL: str = os.getenv("BACKEND_URL", "http://localhost:8000")

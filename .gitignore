@@ -15,6 +15,7 @@ dist/
 # === Secrets & local config ===
 .env
 .env.*
+!*.env.example
 backend/.env
 frontend/.env
 

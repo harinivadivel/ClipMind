@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiPlay, FiTrash2, FiVideo, FiClock } from 'react-icons/fi';
 import historyService from '../services/historyService';
+import { resolveMediaUrl } from '../utils/mediaUrl.js';
 
 // Content Creator history page.
 //
@@ -105,7 +106,7 @@ const CreatorHistory = () => {
                   <Link to={`/videos/${video.id}`} className="block">
                     <div className="aspect-video bg-gray-100 relative">
                       {video.thumbnail_url ? (
-                        <img src={video.thumbnail_url} alt={video.title} className="w-full h-full object-cover" />
+                        <img src={resolveMediaUrl(video.thumbnail_url)} alt={video.title} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <FiVideo className="text-4xl text-gray-300" />

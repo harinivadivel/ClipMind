@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { FiVideo, FiSearch, FiPlay, FiBookmark, FiHardDrive, FiCalendar } from 'react-icons/fi';
 import videoService from '../services/videoService';
 import BookmarkButton from '../components/BookmarkButton';
+import { resolveMediaUrl } from '../utils/mediaUrl.js';
 
 const Browse = () => {
   const [videos, setVideos] = useState([]);
@@ -86,7 +87,7 @@ const Browse = () => {
                 <Link to={`/videos/${video.id}`} className="block">
                   <div className="aspect-video bg-gray-100 relative">
                     {video.thumbnail_url ? (
-                      <img src={video.thumbnail_url} alt={video.title} className="w-full h-full object-cover" />
+                      <img src={resolveMediaUrl(video.thumbnail_url)} alt={video.title} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <FiVideo className="text-4xl text-gray-300" />

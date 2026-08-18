@@ -4,6 +4,7 @@ import { FiTrash2, FiEye, FiEdit3, FiVideo, FiCalendar, FiHardDrive, FiZap, FiGl
 import videoService from '../services/videoService.js';
 import BookmarkButton from '../components/BookmarkButton.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import { resolveMediaUrl } from '../utils/mediaUrl.js';
 
 const MyVideos = () => {
   const { user } = useAuth();
@@ -128,7 +129,7 @@ const MyVideos = () => {
                 <div className="aspect-video bg-gray-100 relative">
                   {video.thumbnail_url ? (
                     <img
-                      src={video.thumbnail_url}
+                      src={resolveMediaUrl(video.thumbnail_url)}
                       alt={video.title}
                       className="w-full h-full object-cover"
                     />
